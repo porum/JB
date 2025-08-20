@@ -22,16 +22,20 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
-import io.github.porum.jb.api.Callback
+import com.google.gson.GsonBuilder
 import io.github.porum.jb.api.JBFactory
+import io.github.porum.jb.api.genericType
 import org.json.JSONObject
 import java.util.ServiceLoader
 
-// injected js object name
+// the name that will be given to the Javascript objects created by either
+// WebMessageListener or JavascriptInterface
 private const val jsObjName = "jsObject"
 
 // Create a handler that runs on the UI thread
 private val handler: Handler = Handler(Looper.getMainLooper())
+
+private val gson = GsonBuilder().create()
 
 /**
  * Injects a JavaScript object which supports a {@code postMessage()} method.
@@ -42,10 +46,6 @@ private val handler: Handler = Handler(Looper.getMainLooper())
  * If WebMessageListener is not supported then the method will defer to using JavascriptInterface
  * to create the JavaScript object.
  * <p>
- * The {@code postMessage()} methods in the Javascript objects created by WebMessageListener and
- * JavascriptInterface both make calls to the same callback, {@code onMessageReceived()}.
- * In this case, the callback invokes native Android sharing.
- * <p>
  * The WebMessageListener invokes callbacks on the UI thread by default. However,
  * JavascriptInterface invokes callbacks on a background thread by default. In order to
  * guarantee thread safety and that the caller always gets consistent behavior the the callback
@@ -53,60 +53,32 @@ private val handler: Handler = Handler(Looper.getMainLooper())
  * the callback is wrapped in a handler which will tell it to run on the UI thread instead of the default
  * background thread it would otherwise be invoked on.
  * <p>
- * @param webview the component that WebMessageListener or JavascriptInterface will be added to
- * @param jsObjName the name that will be given to the Javascript objects created by either
- *        WebMessageListener or JavascriptInterface
+ * @param webView the component that WebMessageListener or JavascriptInterface will be added to
  * @param allowedOriginRules a set of origins used only by WebMessageListener, if a frame matches an
  * origin in this set then it will have the JS object injected into it
- * @param onMessageReceived invoked on UI thread with message passed in from JavaScript postMessage() call
  */
-fun createJsObject(webview: WebView, allowedOriginRules: Set<String>) {
+fun createJsObject(webView: WebView, allowedOriginRules: Set<String>) {
     if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
         WebViewCompat.addWebMessageListener(
-            webview, jsObjName, allowedOriginRules
+            webView, jsObjName, allowedOriginRules
         ) { view, message, sourceOrigin, isMainFrame, replyProxy ->
-            val request = JSONObject(message.data ?: "{}")
-            val id = request.optString("id", "")
-            val name = request.optString("name", "")
-            val data = request.optString("data", "")
-            call(webview, name, data) { resp ->
-                replyProxy.postMessage(
-                    with(JSONObject()) {
-                        put("id", id)
-                        put("name", name)
-                        put("data", with(JSONObject()) {
-                            put("code", resp.code)
-                            put("message", resp.message)
-                        })
-                    }.toString()
-                )
+            call(webView, message.data ?: "{}") { response ->
+                replyProxy.postMessage(response)
             }
         }
     } else {
-        webview.addJavascriptInterface(object {
+        webView.addJavascriptInterface(object {
             @JavascriptInterface
             fun postMessage(message: String) {
                 // Use the handler to invoke method on UI thread
-                val request = JSONObject(message)
-                val id = request.optString("id", "")
-                val name = request.optString("name", "")
-                val data = request.optString("data", "")
                 handler.post {
-                    call(webview, name, data) { resp ->
-                        val d = with(JSONObject()) {
-                            put("id", id)
-                            put("name", name)
-                            put("data", with(JSONObject()) {
-                                put("code", resp.code)
-                                put("message", resp.message)
-                            })
-                        }
+                    call(webView, message) { response ->
                         val jsCode = """
                             $jsObjName.onmessage({
-                                data: '$d'
+                                data: $response
                             });
                         """.trimIndent()
-                        webview.evaluateJavascript("javascript:$jsCode", null)
+                        webView.evaluateJavascript("javascript:$jsCode", null)
                     }
                 }
             }
@@ -119,12 +91,29 @@ private val jbMap = ServiceLoader.load(JBFactory::class.java).associate {
 }
 
 private inline fun call(
-    webview: WebView,
-    name: String,
-    data: String,
-    crossinline callback: Callback
+    webView: WebView,
+    message: String,
+    crossinline callback: (response: String) -> Unit
 ) {
-    jbMap[name]?.call(webview.context, data) { resp ->
-        callback(resp)
+    val request = JSONObject(message)
+    val requestId = request.optString("id", "")
+    val requestName = request.optString("name", "")
+    val requestPayload = request.optString("payload", "")
+
+    val target = jbMap[requestName] ?: return
+
+    target.call(
+        webView.context,
+        gson.fromJson(requestPayload, genericType(target))
+    ) { responsePayload ->
+        val response = with(JSONObject()) {
+            put("id", requestId)
+            put("name", requestName)
+            put("payload", with(JSONObject()) {
+                put("code", responsePayload.code)
+                put("data", responsePayload.data)
+            })
+        }
+        callback(response.toString())
     }
 }

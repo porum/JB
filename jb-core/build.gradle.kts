@@ -33,8 +33,6 @@ android {
 
 dependencies {
     api(project(":jb-api"))
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.webkit)
-    implementation(libs.material)
+    implementation(libs.gson)
 }

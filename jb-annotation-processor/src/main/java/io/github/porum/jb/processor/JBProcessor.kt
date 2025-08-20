@@ -19,7 +19,7 @@ class JBProcessor(
         logger.info("process")
         resolver.getSymbolsWithAnnotation(Name::class.qualifiedName!!)
             .filter { it is KSClassDeclaration && it.validate() }
-            .forEach { it.accept(MetadataCollector(metadataList, logger), Unit) }
+            .forEach { it.accept(MetadataCollector(metadataList, resolver, logger), Unit) }
 
         return emptyList()
     }

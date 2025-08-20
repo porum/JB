@@ -6,6 +6,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
 import io.github.porum.jb.api.JB
@@ -16,15 +17,28 @@ class JBGenerator(
 ) {
 
     fun generate(list: List<Metadata>) {
+        val JBClassName = ClassName(
+            JB::class.qualifiedName!!.substringBeforeLast("."),
+            JB::class.qualifiedName!!.substringAfterLast("."),
+        )
+        val JBFactoryClassName = ClassName(
+            JBFactory::class.qualifiedName!!.substringBeforeLast("."),
+            JBFactory::class.qualifiedName!!.substringAfterLast("."),
+        )
+
         list.forEach {
             val bridgeName = it.bridgeName
             val packageName = it.className.substringBeforeLast(".")
             val simpleClassName = it.className.substringAfterLast(".")
+            val genericClassName = ClassName(
+                it.genericClassName.substringBeforeLast("."),
+                it.genericClassName.substringAfterLast(".")
+            )
 
             val file = FileSpec.builder(GENERATE_PACKAGE_NAME, "JBFactory_$bridgeName")
                 .addType(
                     TypeSpec.classBuilder("JBFactory_$bridgeName")
-                        .addSuperinterface(JBFactory::class)
+                        .addSuperinterface(JBFactoryClassName.plusParameter(genericClassName))
                         .addFunction(
                             FunSpec.builder("getName")
                                 .addModifiers(KModifier.OVERRIDE)
@@ -35,7 +49,7 @@ class JBGenerator(
                         .addFunction(
                             FunSpec.builder("getJB")
                                 .addModifiers(KModifier.OVERRIDE)
-                                .returns(JB::class)
+                                .returns(JBClassName.plusParameter(genericClassName))
                                 .addStatement(
                                     "return %T()",
                                     ClassName(packageName, simpleClassName)

@@ -6,9 +6,9 @@ import io.github.porum.jb.api.Name
 import io.github.porum.jb.api.Callback
 import io.github.porum.jb.api.JB
 
-@Name(value = "init")
-class InitialBridge : JB {
-    override fun call(context: Context, message: String, callback: Callback) {
-        Log.d("InitialBridge", "initialized")
+@Name(value = "JBInitialized")
+class InitialBridge : JB<Unit> {
+    override fun call(context: Context, requestPayload: Unit, callback: Callback) {
+        Log.d("InitialBridge", "initialized: $requestPayload")
     }
 }

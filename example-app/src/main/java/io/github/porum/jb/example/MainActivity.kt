@@ -5,7 +5,6 @@ import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -34,14 +33,10 @@ class MainActivity : AppCompatActivity() {
             return assetLoader.shouldInterceptRequest(request.url)
         }
 
-        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+        override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
-            Log.i(TAG, "onPageStarted")
-        }
-
-        override fun onPageFinished(view: WebView?, url: String?) {
-            super.onPageFinished(view, url)
-            Log.i(TAG, "onPageFinished")
+            val bridgeJsCode = view.context.assets.open("bridge.js").bufferedReader().readText()
+            view.loadUrl("javascript:$bridgeJsCode")
         }
     }
 

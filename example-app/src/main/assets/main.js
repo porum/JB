@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 function share() {
-  sendMessage(
+  window.JB.sendMessage(
     name = "share",
-    data = "The weather in " + `${document.getElementById("title").innerText}` + " today is " + `${document.getElementById("shortDescription").innerText} `,
+    payload = {
+        message: "The weather in " + `${document.getElementById("title").innerText}` + " today is " + `${document.getElementById("shortDescription").innerText} `,
+    },
     callback = function(resp) {
-      console.log(`native shared ${resp.message}(${resp.code})`);
+      console.log(`native shared ${resp.data}(${resp.code})`);
     }
   );
 };
