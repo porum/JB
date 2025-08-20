@@ -1,6 +1,6 @@
 package io.github.porum.jb.api
 
-data class Response(
+data class ResponsePayload(
     val code: Int = 0,
-    val message: String = "OK",
+    val data: String = "OK",
 )

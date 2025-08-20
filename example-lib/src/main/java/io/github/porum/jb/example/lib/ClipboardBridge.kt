@@ -7,7 +7,7 @@ import io.github.porum.jb.api.JB
 
 @Name(value = "clipboard")
 class ClipboardBridge : JB {
-    override fun call(context: Context, message: String, callback: Callback) {
+    override fun call(context: Context, requestPayload: String, callback: Callback) {
 
     }
 }
