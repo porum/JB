@@ -1,3 +1,6 @@
+# JB
+Yet another js bridge for Android.
+
 ## Usage
 
 1. Javascript side
