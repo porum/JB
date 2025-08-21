@@ -37,6 +37,7 @@ class ShareBridge : JB<SharePayload> {
     val shareIntent = Intent.createChooser(sendIntent, null)
     context.startActivity(shareIntent, null)
 
+    // Callback to javascript
     callback(
       ResponsePayload(
         code = 200,
