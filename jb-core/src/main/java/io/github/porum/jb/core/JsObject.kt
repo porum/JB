@@ -71,7 +71,7 @@ fun createJsObject(webView: WebView, allowedOriginRules: Set<String>) {
                     call(webView, message) { response ->
                         val jsCode = """
                             $jsObjName.onmessage({
-                                data: $response
+                                data: '$response'
                             });
                         """.trimIndent()
                         webView.evaluateJavascript("javascript:$jsCode", null)
