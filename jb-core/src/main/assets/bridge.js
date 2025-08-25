@@ -16,34 +16,85 @@ function generateUUID() {
 }
 
 function init() {
-    const messages = new Map();
+    const TYPE_JS_POST = 0;
+    const TYPE_NATIVE_REPLY = 1;
+    const TYPE_NATIVE_POST = 2;
+    const TYPE_JS_REPLY = 3;
 
-    /* send message to native */
-    function sendMessage(name, payload = {}, callback = null) {
+    const jsPostMessages = new Map();
+    const nativePostMessages = [];
+
+    /* post message to native */
+    function postMessage(name, payload = {}, callback = null) {
         const id = generateUUID();
-        const request = { id, name, payload, callback };
-        messages.set(id, request);
+        const request = { id, name, payload, callback, type: TYPE_JS_POST };
+        jsPostMessages.set(id, request);
     	jsObject.postMessage(JSON.stringify(request));
+    }
+
+    let handleCallback;
+    function handleMessage(callback) {
+        if (typeof callback === 'function') {
+            handleCallback = callback;
+        } else {
+            throw new Error('handleMessage: callback must be a function!');
+        }
     }
 
     /* receive message from native */
     jsObject.onmessage = function(event) {
-        const response = JSON.parse(event.data);
-        const request = messages.get(response.id);
-        if (request && request.callback) {
-            request.callback(response.payload);
-            messages.delete(response.id);
+        postQueuedMessages();
+        const data = JSON.parse(event.data);
+        if (data.type === TYPE_NATIVE_REPLY) {
+            const request = jsPostMessages.get(data.id);
+            if (request && request.callback) {
+                request.callback(data.payload);
+                jsPostMessages.delete(data.id);
+            }
+        } else if (data.type == TYPE_NATIVE_POST) {
+            if (handleCallback) {
+                handleCallback(data.name, data.payload, function(result) {
+                    const reply = {
+                        id: data.id,
+                        name: data.name,
+                        payload: result,
+                        type: TYPE_JS_REPLY
+                    };
+                    jsObject.postMessage(JSON.stringify(reply));
+                });
+            } else {
+                console.log('handleCallback is undefined');
+                nativePostMessages.push(data);
+            }
         }
     };
 
-    /* send a initialized message to native */
-    sendMessage('JBInitialized');
-    /* dispatch a initialized event to H5 */
+    function postQueuedMessages() {
+        if (nativePostMessages.length !== 0 && handleCallback) {
+            for (let message of nativePostMessages) {
+                handleCallback(message.name, message.payload, function(result) {
+                    const reply = {
+                        id: message.id,
+                        name: message.name,
+                        payload: result,
+                        type: TYPE_JS_REPLY
+                    };
+                    jsObject.postMessage(JSON.stringify(reply));
+                });
+            }
+            nativePostMessages.splice(0, nativePostMessages.length);
+        }
+    }
+
+    /* post initialized message to native */
+    postMessage('JBInitialized');
+    /* dispatch initialized event to H5 */
     document.dispatchEvent(new Event('JBInitialized'));
 
     /* attach a JB object to window */
     window.JB = {
-        sendMessage
+        postMessage,
+        handleMessage,
     };
 }
 
