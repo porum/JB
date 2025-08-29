@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+window.JB.addNativeMessageListener(function(name, payload, callback) {
+    console.log("receive native post message", name, JSON.stringify(payload));
+    setTimeout(() => {
+        callback({ code: 0, data: 'okay' });
+    }, 2000);
+});
+
 function share() {
-  window.JB.sendMessage(
+  window.JB.postMessage(
     name = "share",
     payload = {
         message: "The weather in " + `${document.getElementById("title").innerText}` + " today is " + `${document.getElementById("shortDescription").innerText} `,

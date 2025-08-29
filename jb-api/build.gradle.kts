@@ -17,5 +17,6 @@ kotlin {
 
 dependencies {
     compileOnly(project(":jb-android-stub"))
+    implementation(libs.androidx.annotation.jvm)
     implementation(libs.gson)
 }
