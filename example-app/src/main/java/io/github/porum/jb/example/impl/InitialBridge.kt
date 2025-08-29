@@ -15,7 +15,7 @@ private const val TAG = "JBInitialized"
 
 @Name(value = "JBInitialized")
 class InitialBridge : JB {
-  override fun handleJsPostMessage(webView: WebView, requestPayload: String, callback: Callback) {
+  override fun handleJsPostMessage(webView: WebView, payload: String, callback: Callback) {
     Log.d(TAG, "initialized")
 
     webView.viewScope.launch {
