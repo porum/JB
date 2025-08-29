@@ -12,58 +12,58 @@ import io.github.porum.jb.api.JB
 import io.github.porum.jb.api.JBFactory
 
 class JBGenerator(
-    private val codeGenerator: CodeGenerator,
+  private val codeGenerator: CodeGenerator,
 ) {
 
-    fun generate(list: List<Metadata>) {
-        list.forEach {
-            val bridgeName = it.bridgeName
-            val packageName = it.className.substringBeforeLast(".")
-            val simpleClassName = it.className.substringAfterLast(".")
+  fun generate(list: List<Metadata>) {
+    list.forEach {
+      val bridgeName = it.bridgeName
+      val packageName = it.className.substringBeforeLast(".")
+      val simpleClassName = it.className.substringAfterLast(".")
 
-            val file = FileSpec.builder(GENERATE_PACKAGE_NAME, "JBFactory_$bridgeName")
-                .addType(
-                    TypeSpec.classBuilder("JBFactory_$bridgeName")
-                        .addSuperinterface(JBFactory::class)
-                        .addFunction(
-                            FunSpec.builder("getName")
-                                .addModifiers(KModifier.OVERRIDE)
-                                .returns(String::class)
-                                .addStatement("return %S", bridgeName)
-                                .build()
-                        )
-                        .addFunction(
-                            FunSpec.builder("getJB")
-                                .addModifiers(KModifier.OVERRIDE)
-                                .returns(JB::class)
-                                .addStatement(
-                                    "return %T()",
-                                    ClassName(packageName, simpleClassName)
-                                )
-                                .build()
-                        )
-                        .build()
+      val file = FileSpec.builder(GENERATE_PACKAGE_NAME, "JBFactory_$bridgeName")
+        .addType(
+          TypeSpec.classBuilder("JBFactory_$bridgeName")
+            .addSuperinterface(JBFactory::class)
+            .addFunction(
+              FunSpec.builder("getName")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(String::class)
+                .addStatement("return %S", bridgeName)
+                .build()
+            )
+            .addFunction(
+              FunSpec.builder("getJB")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(JB::class)
+                .addStatement(
+                  "return %T()",
+                  ClassName(packageName, simpleClassName)
                 )
                 .build()
-
-            file.writeTo(codeGenerator, false)
-        }
-
-        val serviceFile = codeGenerator.createNewFile(
-            dependencies = Dependencies(true, *list.map { it.sourceFile }.toTypedArray()),
-            packageName = "",
-            fileName = "META-INF/services/$SERVICE_NAME",
-            extensionName = ""
+            )
+            .build()
         )
-        serviceFile.bufferedWriter().use { writer ->
-            list.forEach {
-                writer.write("$GENERATE_PACKAGE_NAME.JBFactory_${it.bridgeName}\n")
-            }
-        }
+        .build()
+
+      file.writeTo(codeGenerator, false)
     }
 
-    companion object {
-        private const val GENERATE_PACKAGE_NAME = "io.github.porum.jb.generate"
-        private const val SERVICE_NAME = "io.github.porum.jb.api.JBFactory"
+    val serviceFile = codeGenerator.createNewFile(
+      dependencies = Dependencies(true, *list.map { it.sourceFile }.toTypedArray()),
+      packageName = "",
+      fileName = "META-INF/services/$SERVICE_NAME",
+      extensionName = ""
+    )
+    serviceFile.bufferedWriter().use { writer ->
+      list.forEach {
+        writer.write("$GENERATE_PACKAGE_NAME.JBFactory_${it.bridgeName}\n")
+      }
     }
+  }
+
+  companion object {
+    private const val GENERATE_PACKAGE_NAME = "io.github.porum.jb.generate"
+    private const val SERVICE_NAME = "io.github.porum.jb.api.JBFactory"
+  }
 }

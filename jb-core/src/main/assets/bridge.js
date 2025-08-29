@@ -1,53 +1,124 @@
-
-const messageQueue = new Map();
-
-(function init() {
-    sendMessage("init")
-})()
-
-function sendMessage(name, data, callback) {
-    const id = generateUUID();
-    const request = { id, name, data, callback };
-    messageQueue.set(id, request);
-    /* In this implementation, only the single-arg version of postMessage is supported. As noted
-     * in the WebViewCompat reference doc, the second parameter, MessagePorts, is optional.
-     * Also note that onmessage, addEventListener and removeEventListener are not supported.
-     */
-	jsObject.postMessage(JSON.stringify(request));
-}
-
-jsObject.onmessage = function(event) {
-    const response = JSON.parse(event.data);
-    const request = messageQueue.get(response.id);
-    if (request && request.callback) {
-        request.callback(response.data);
-    }
-}
-
-
-// 生成UUID v4 (随机UUID), generate by AI
+/* GENERATE BY AI */
 function generateUUID() {
-  // 1. 创建一个16字节(128位)的数组来存储UUID的各个部分
   const array = new Uint8Array(16);
-
-  // 2. 填充随机值
   crypto.getRandomValues(array);
 
-  // 3. 设置UUID版本和变体
-  // 版本: 第6个字节的高4位设置为0100 (UUID v4)
   array[6] = (array[6] & 0x0F) | 0x40;
-  // 变体: 第8个字节的高2位设置为10
   array[8] = (array[8] & 0x3F) | 0x80;
 
-  // 4. 转换为十六进制字符串并添加分隔符
   return Array.from(array, (byte, index) => {
-    // 每个字节转换为两位十六进制数
     const hex = byte.toString(16).padStart(2, '0');
-
-    // 在特定位置添加UUID分隔符
     if ([4, 6, 8, 10].includes(index)) {
       return `-${hex}`;
     }
     return hex;
   }).join('');
 }
+
+function init() {
+    const TYPE_JS_POST = 0;
+    const TYPE_NATIVE_REPLY = 1;
+    const TYPE_NATIVE_POST = 2;
+    const TYPE_JS_REPLY = 3;
+
+    const jsPostMessages = new Map();
+    const nativeMessageListeners = new Set();
+    const nativePostMessages = [];
+
+    /* dispatch native post message to web */
+    function dispatchNativePostMessage(message, listener) {
+        listener(message.name, message.payload, function(result) {
+            const reply = {
+                id: message.id,
+                name: message.name,
+                payload: result,
+                type: TYPE_JS_REPLY
+            };
+            jsObject.postMessage(JSON.stringify(reply));
+        });
+    }
+
+    /* dispatch queued native post messages to web */
+    function dispatchQueuedNativePostMessages() {
+        if (nativePostMessages.length !== 0 && nativeMessageListeners.size !== 0) {
+            for (const message of nativePostMessages) {
+                for (const listener of nativeMessageListeners) {
+                    dispatchNativePostMessage(message, listener);
+                }
+            }
+
+            /* clear queued native post messages */
+            nativePostMessages.splice(0, nativePostMessages.length);
+        }
+    }
+
+    /* web listen native post message */
+    function addNativeMessageListener(listener) {
+        if (typeof listener === 'function') {
+            nativeMessageListeners.add(listener);
+        } else {
+            throw new Error('addNativeMessageListener: listener must be a function!');
+        }
+    }
+
+    /* post web message to native */
+    function postMessage(name, payload = {}, callback = null) {
+        const id = generateUUID();
+        const request = { id, name, payload, callback, type: TYPE_JS_POST };
+        jsPostMessages.set(id, request);
+    	jsObject.postMessage(JSON.stringify(request));
+    }
+
+    /* receive message from native */
+    jsObject.onmessage = function(event) {
+        dispatchQueuedNativePostMessages();
+        const data = JSON.parse(event.data);
+        if (data.type === TYPE_NATIVE_REPLY) {
+            const request = jsPostMessages.get(data.id);
+            if (request && request.callback) {
+                request.callback(data.payload);
+                jsPostMessages.delete(data.id);
+            }
+        } else if (data.type == TYPE_NATIVE_POST) {
+            if (nativeMessageListeners.size === 0) {
+                console.log('nativeMessageListeners is empty, cannot dispatch native messages!');
+                nativePostMessages.push(data);
+                return;
+            }
+            for (const nativeMessageListener of nativeMessageListeners) {
+                dispatchNativePostMessage(data, nativeMessageListener);
+            }
+        }
+    };
+
+    /* post initialized message to native */
+    postMessage('JBInitialized');
+    /* dispatch initialized event to web */
+    document.dispatchEvent(new Event('JBInitialized'));
+
+    /* attach a JB object to window */
+    window.JB = {
+        postMessage,
+        addNativeMessageListener,
+    };
+}
+
+(function() {
+    /* intercept native layer call multi-times */
+    if (window.JB) {
+        return;
+    }
+    init();
+
+    if (window.JB) {
+        return;
+    }
+
+    /* retry if init failed */
+    const timer = setInterval(() => {
+        init();
+        if (window.JB) {
+            clearInterval(timer);
+        }
+    }, 20);
+})();
