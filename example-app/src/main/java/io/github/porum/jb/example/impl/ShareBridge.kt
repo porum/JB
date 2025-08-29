@@ -3,9 +3,9 @@ package io.github.porum.jb.example.impl
 import android.content.Intent
 import android.webkit.WebView
 import androidx.annotation.Keep
-import io.github.porum.jb.api.Name
 import io.github.porum.jb.api.Callback
 import io.github.porum.jb.api.JB
+import io.github.porum.jb.api.Name
 import io.github.porum.jb.api.ResponsePayload
 
 @Name(value = "share")

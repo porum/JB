@@ -9,24 +9,24 @@ import com.google.devtools.ksp.validate
 import io.github.porum.jb.api.Name
 
 class JBProcessor(
-    private val codeGenerator: CodeGenerator,
-    private val logger: KSPLoggerWrapper,
+  private val codeGenerator: CodeGenerator,
+  private val logger: KSPLoggerWrapper,
 ) : SymbolProcessor {
 
-    private val metadataList: MutableList<Metadata> = mutableListOf()
+  private val metadataList: MutableList<Metadata> = mutableListOf()
 
-    override fun process(resolver: Resolver): List<KSAnnotated> {
-        logger.info("process")
-        resolver.getSymbolsWithAnnotation(Name::class.qualifiedName!!)
-            .filter { it is KSClassDeclaration && it.validate() }
-            .forEach { it.accept(MetadataCollector(metadataList, resolver, logger), Unit) }
+  override fun process(resolver: Resolver): List<KSAnnotated> {
+    logger.info("process")
+    resolver.getSymbolsWithAnnotation(Name::class.qualifiedName!!)
+      .filter { it is KSClassDeclaration && it.validate() }
+      .forEach { it.accept(MetadataCollector(metadataList, resolver, logger), Unit) }
 
-        return emptyList()
-    }
+    return emptyList()
+  }
 
-    override fun finish() {
-        super.finish()
-        logger.info("finish")
-        JBGenerator(codeGenerator).generate(metadataList)
-    }
+  override fun finish() {
+    super.finish()
+    logger.info("finish")
+    JBGenerator(codeGenerator).generate(metadataList)
+  }
 }

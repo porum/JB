@@ -2,10 +2,9 @@ package io.github.porum.jb.example.impl
 
 import android.util.Log
 import android.webkit.WebView
-import io.github.porum.jb.api.Name
 import io.github.porum.jb.api.Callback
 import io.github.porum.jb.api.JB
-import io.github.porum.jb.api.ResponsePayload
+import io.github.porum.jb.api.Name
 import io.github.porum.jb.core.postMessage
 import io.github.porum.jb.example.utils.viewScope
 import kotlinx.coroutines.delay

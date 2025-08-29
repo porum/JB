@@ -13,19 +13,19 @@ private const val JB_NAME = "read_clipboard"
 
 @Name(value = JB_NAME)
 class ReadClipboardBridge : JB<Unit> {
-    override fun handleJsPostMessage(webView: WebView, requestPayload: Unit, callback: Callback) {
-        Log.w(JB_NAME, "call, request: $requestPayload")
+  override fun handleJsPostMessage(webView: WebView, requestPayload: Unit, callback: Callback) {
+    Log.w(JB_NAME, "call, request: $requestPayload")
 
-        val clipboard = webView.context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        if (clipboard.hasPrimaryClip()) {
-            val item = clipboard.primaryClip?.getItemAt(0)
-            val text = item?.text
-            if (text != null) {
-                callback(ResponsePayload(0, text.toString()))
-                return
-            }
-        }
-
-        return callback(ResponsePayload(-1, ""))
+    val clipboard = webView.context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+    if (clipboard.hasPrimaryClip()) {
+      val item = clipboard.primaryClip?.getItemAt(0)
+      val text = item?.text
+      if (text != null) {
+        callback(ResponsePayload(0, text.toString()))
+        return
+      }
     }
+
+    return callback(ResponsePayload(-1, ""))
+  }
 }
