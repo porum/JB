@@ -24,7 +24,6 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import io.github.porum.jb.api.Callback
 import io.github.porum.jb.api.JBFactory
-import io.github.porum.jb.api.ResponsePayload
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.util.ServiceLoader
@@ -99,11 +98,7 @@ fun WebView.createJsObject(allowedOriginRules: Set<String> = setOf("*")) {
   }
 }
 
-private fun handleJsMessage(
-  webView: WebView,
-  message: String,
-  callback: (response: String) -> Unit
-) {
+private fun handleJsMessage(webView: WebView, message: String, callback: Callback) {
   val json = JSONObject(message)
   val type = json.optInt("type", DataType.TYPE_JS_POST)
 
@@ -114,24 +109,17 @@ private fun handleJsMessage(
   }
 }
 
-private fun handleJsPostMessage(
-  webView: WebView,
-  message: JSONObject,
-  callback: (response: String) -> Unit
-) {
+private fun handleJsPostMessage(webView: WebView, message: JSONObject, callback: Callback) {
   val id = message.optString("id", "")
   val name = message.optString("name", "")
   val payload = message.optString("payload", "")
 
   val target = jbMap[name] ?: return
-  target.handleJsPostMessage(webView, payload) { responsePayload ->
+  target.handleJsPostMessage(webView, payload) { reply ->
     val response = with(JSONObject()) {
       put("id", id)
       put("name", name)
-      put("payload", with(JSONObject()) {
-        put("code", responsePayload.code)
-        put("data", responsePayload.data)
-      })
+      put("payload", reply)
       put("type", DataType.TYPE_NATIVE_REPLY)
     }
     callback(response.toString())
@@ -141,11 +129,7 @@ private fun handleJsPostMessage(
 private fun handleJsReplyMessage(message: JSONObject) {
   val id = message.optString("id", "")
   val payload = message.optString("payload", "")
-
-  val response = JSONObject(payload)
-  val code = response.optInt("id", 0)
-  val data = response.optString("data", "OK")
-  nativePostCallbacks.remove(id)?.get()?.invoke(ResponsePayload(code, data))
+  nativePostCallbacks.remove(id)?.get()?.invoke(payload)
 }
 
 fun WebView.postMessage(name: String, payload: String = "", callback: Callback? = null) {

@@ -17,18 +17,16 @@
 window.JB.addNativeMessageListener(function(name, payload, callback) {
     console.log("receive native post message", name, JSON.stringify(payload));
     setTimeout(() => {
-        callback({ code: 0, data: "okay" });
+        callback("okay");
     }, 2000);
 });
 
 function share() {
   window.JB.postMessage(
     name = "share",
-    payload = {
-        message: "The weather in " + `${document.getElementById("title").innerText}` + " today is " + `${document.getElementById("shortDescription").innerText} `,
-    },
+    payload = "The weather in " + `${document.getElementById("title").innerText}` + " today is " + `${document.getElementById("shortDescription").innerText} `,
     callback = function(resp) {
-      console.log(`native shared ${resp.data}(${resp.code})`);
+      console.log(resp);
     }
   );
 };

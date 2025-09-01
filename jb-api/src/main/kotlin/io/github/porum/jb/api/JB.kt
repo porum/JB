@@ -2,8 +2,8 @@ package io.github.porum.jb.api
 
 import android.webkit.WebView
 
-typealias Callback = (response: ResponsePayload) -> Unit
+typealias Callback = (message: String) -> Unit
 
 interface JB {
-  fun handleJsPostMessage(webView: WebView, requestPayload: String, callback: Callback)
+  fun handleJsPostMessage(webView: WebView, payload: String, callback: Callback)
 }

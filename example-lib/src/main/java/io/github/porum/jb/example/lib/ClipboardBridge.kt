@@ -7,7 +7,7 @@ import io.github.porum.jb.api.Name
 
 @Name(value = "clipboard")
 class ClipboardBridge : JB {
-  override fun handleJsPostMessage(webView: WebView, requestPayload: String, callback: Callback) {
+  override fun handleJsPostMessage(webView: WebView, payload: String, callback: Callback) {
 
   }
 }
