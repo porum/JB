@@ -2,6 +2,9 @@ plugins {
   alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.js.optimizer)
+  `maven-publish`
+  signing
+  alias(libs.plugins.mavenCentral.publish)
 }
 
 android {
@@ -30,9 +33,36 @@ android {
   kotlinOptions {
     jvmTarget = "11"
   }
+
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+      withJavadocJar()
+    }
+//    multipleVariants("allVariants") {
+//      allVariants()
+//      withSourcesJar()
+//      withJavadocJar()
+//    }
+  }
 }
 
 dependencies {
   api(project(":jb-api"))
   implementation(libs.androidx.webkit)
+}
+
+publishing {
+  publications {
+    register<MavenPublication>("release") {
+      afterEvaluate {
+        from(components["release"])
+
+        pom {
+          name.set(project.name)
+          description.set("Yet another js bridge for Android.")
+        }
+      }
+    }
+  }
 }

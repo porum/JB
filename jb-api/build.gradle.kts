@@ -1,7 +1,9 @@
 plugins {
   id("java-library")
   alias(libs.plugins.jetbrains.kotlin.jvm)
-  alias(libs.plugins.kotlinx.serialization)
+  `maven-publish`
+  signing
+  alias(libs.plugins.mavenCentral.publish)
 }
 
 java {
@@ -17,4 +19,17 @@ kotlin {
 
 dependencies {
   compileOnly(project(":jb-android-stub"))
+}
+
+publishing {
+  publications {
+    create<MavenPublication>("JBArtifact") {
+      from(components["java"])
+
+      pom {
+        name.set(project.name)
+        description.set("Yet another js bridge for Android.")
+      }
+    }
+  }
 }

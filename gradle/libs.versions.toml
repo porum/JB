@@ -48,4 +48,5 @@ kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", vers
 
 # Plugins defined by this project
 js-optimizer = { id = "js.optimizer" }
+mavenCentral-publish = { id = "mavenCentral.publish" }
 

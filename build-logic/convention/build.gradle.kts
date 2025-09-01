@@ -39,5 +39,9 @@ gradlePlugin {
       id = libs.plugins.js.optimizer.get().pluginId
       implementationClass = "io.github.porum.convention.JsOptimizePlugin"
     }
+    register("mavenCentral-publish") {
+      id = libs.plugins.mavenCentral.publish.get().pluginId
+      implementationClass = "io.github.porum.convention.MavenCentralPublishPlugin"
+    }
   }
 }
