@@ -1,7 +1,7 @@
 package io.github.porum.convention
 
 import com.android.build.api.artifact.SingleArtifact
-import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.AndroidComponentsExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.configurationcache.extensions.capitalized
@@ -12,7 +12,7 @@ import org.gradle.configurationcache.extensions.capitalized
 class JsOptimizePlugin : Plugin<Project> {
   override fun apply(project: Project) {
     val androidComponents = project.extensions.getByType(
-      ApplicationAndroidComponentsExtension::class.java
+      AndroidComponentsExtension::class.java
     )
 
     androidComponents.onVariants { variant ->

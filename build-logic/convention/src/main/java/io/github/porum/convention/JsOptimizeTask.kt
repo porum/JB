@@ -3,9 +3,14 @@ package io.github.porum.convention
 import com.google.javascript.jscomp.Compiler
 import com.google.javascript.jscomp.CompilerOptions
 import com.google.javascript.jscomp.CompilerOptions.LanguageMode
+import com.google.javascript.jscomp.CompilerPass
+import com.google.javascript.jscomp.CustomPassExecutionTime
+import com.google.javascript.jscomp.NodeTraversal
 import com.google.javascript.jscomp.PropertyRenamingPolicy
 import com.google.javascript.jscomp.SourceFile
 import com.google.javascript.jscomp.VariableRenamingPolicy
+import com.google.javascript.rhino.Node
+import com.google.javascript.rhino.Token
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.InputDirectory
@@ -32,6 +37,29 @@ abstract class JsOptimizeTask : DefaultTask() {
       propertyRenaming = PropertyRenamingPolicy.OFF
       environment = CompilerOptions.Environment.BROWSER
       isPrettyPrint = false
+
+      // drop console.log
+      addCustomPass(CustomPassExecutionTime.BEFORE_OPTIMIZATIONS, object : CompilerPass {
+        override fun process(externs: Node, root: Node) {
+          NodeTraversal.traverse(compiler, root, object : NodeTraversal.Callback {
+            override fun shouldTraverse(t: NodeTraversal?, n: Node?, parent: Node?): Boolean {
+              return true
+            }
+
+            override fun visit(t: NodeTraversal?, n: Node?, parent: Node?) {
+              if (
+                n?.token == Token.CALL &&
+                n.firstChild?.token == Token.GETPROP &&
+                n.firstChild?.string == "log" &&
+                n.firstChild?.firstChild?.token == Token.NAME &&
+                n.firstChild?.firstChild?.string == "console"
+              ) {
+                parent?.detach()
+              }
+            }
+          })
+        }
+      })
     }
 //    val externs = SourceFile.fromZipFile(
 //      "${project.rootDir}/build-logic/convention/src/main/resources/externs.zip",
