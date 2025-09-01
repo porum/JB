@@ -12,8 +12,8 @@ Yet another js bridge for Android.
 window.JB.postMessage(
   name = "share",
   payload = "Hi, I share a JB to you.",
-  callback = function(resp) {
-    console.log(`share ${resp.data}(${resp.code})`);
+  callback = function(response) {
+    console.log(response);
   }
 );
 ```
@@ -33,7 +33,7 @@ class ShareBridge : JB {
     val shareIntent = Intent.createChooser(sendIntent, null)
     webView.context.startActivity(shareIntent, null)
 
-    callback(ResponsePayload(code = 0, data = "Thank you share me a JB, I love it."))
+    callback("Thank you share me a JB, I love it.")
   }
 }
 ```
@@ -56,7 +56,7 @@ webView.postMessage(
 window.JB.addNativeMessageListener((name, payload, callback) => {
   console.log("receive native post message", name, JSON.stringify(payload));
   if (name === "post_bt_rssi") {
-    callback({ code: 0, data: "okay" });
+    callback("okay");
   }
 });
 ```
